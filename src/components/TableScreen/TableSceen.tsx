@@ -3,7 +3,7 @@ import { Animated, BackHandler, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Card, Separator, Text, XStack, YStack } from "tamagui";
-import type { RestaurantTable } from "@/types/types";
+import type { RestaurantTable } from "@/model/restaurantTable";
 import { TableMenuScreen } from "./TableMenuScreen";
 import { OrderConfirmationScreen } from "./OrderConfirmationScreen";
 
