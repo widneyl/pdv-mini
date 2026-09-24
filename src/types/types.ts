@@ -48,3 +48,9 @@ export interface Order extends BaseEntity {
   isPaid: boolean;
   restaurantTableRef: string;
 }
+
+export interface RestaurantTable extends BaseEntity {
+  restaurantRef: string;
+  number: number;
+  status?: "FREE" | "OCCUPIED" | "CLOSED";
+}
