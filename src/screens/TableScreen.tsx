@@ -1,148 +1,46 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Animated, BackHandler, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Card, Separator, Text, XStack, YStack } from "tamagui";
-import type { RestaurantTable } from "@/model/restaurantTable";
-import { TableMenuScreen } from "./TableMenuScreen";
-import { OrderConfirmationScreen } from "./OrderConfirmationScreen";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useTable } from "@/contexts/TableContext";
+import type { TableStackParamList } from "@/navigation/types";
 
-export interface TableItem {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-  additionals?: { name: string; price: number }[];
-}
-
-export interface MenuProduct {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-}
-
-export interface CartItem extends MenuProduct {
-  quantity: number;
-}
-
-interface TableScreenProps {
-  table: RestaurantTable;
-  onBack: () => void;
-}
-
-type Screen = "table" | "menu" | "confirmation";
+type Props = NativeStackScreenProps<TableStackParamList, "TableDetail">;
 type Tab = "items" | "bill";
-
-const mockItems: TableItem[] = [
-  { id: "1", name: "Picanha", quantity: 2, price: 45, additionals: [{ name: "Farofa", price: 5 }] },
-  { id: "2", name: "Cerveja Heineken", quantity: 3, price: 10 },
-  { id: "3", name: "Refrigerante", quantity: 2, price: 7 },
-];
-
-const mockProducts: MenuProduct[] = [
-  { id: "1", name: "Picanha", category: "Carnes", price: 45 },
-  { id: "2", name: "Filé com fritas", category: "Carnes", price: 38 },
-  { id: "3", name: "Cerveja Heineken", category: "Bebidas", price: 10 },
-  { id: "4", name: "Cerveja Budweiser", category: "Bebidas", price: 9 },
-  { id: "5", name: "Refrigerante", category: "Bebidas", price: 7 },
-  { id: "6", name: "Batata frita", category: "Porções", price: 18 },
-  { id: "7", name: "Calabresa acebolada", category: "Porções", price: 25 },
-];
 
 const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace(".", ",")}`;
 
-export function TableScreen({ table, onBack }: TableScreenProps) {
-  const [screen, setScreen] = useState<Screen>("table");
+export function TableScreen({ navigation, route }: Props) {
+  const { id, number } = route.params;
   const [tab, setTab] = useState<Tab>("items");
-  const [items, setItems] = useState<TableItem[]>(mockItems);
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const menuX = useRef(new Animated.Value(-320)).current;
-
-  const tableTotal = useMemo(() => items.reduce((total, item) => {
-    const additionalsTotal = item.additionals?.reduce((sum, additional) => sum + additional.price, 0) ?? 0;
-    return total + (item.price + additionalsTotal) * item.quantity;
-  }, 0), [items]);
-
-  const addToCart = (product: MenuProduct) => {
-    setCart((current) => {
-      const existing = current.find((item) => item.id === product.id);
-
-      if (existing) {
-        return current.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      }
-
-      return [...current, { ...product, quantity: 1 }];
-    });
-  };
+  const menuX = useMemo(() => new Animated.Value(-320), []);
+  const { items, tableTotal, deleteSelectedItems } = useTable();
 
   const goToMenu = () => {
-    setScreen("menu");
+    navigation.navigate("Menu", { id, number });
   };
 
-  const goToConfirmation = () => {
-    if (!cart.length) return;
-    setScreen("confirmation");
-  };
-
-  const confirmOrder = () => {
-    const newItems: TableItem[] = cart.map((item) => ({
-      id: `${item.id}-${Date.now()}`,
-      name: item.name,
-      quantity: item.quantity,
-      price: item.price,
-    }));
-
-    setItems((current) => [...current, ...newItems]);
-    setCart([]);
-    setScreen("table");
-    setTab("items");
-  };
-
-  const openMenu = () => {
+  const openMenu = useCallback(() => {
     setMenuOpen(true);
     Animated.timing(menuX, {
       toValue: 0,
       duration: 250,
       useNativeDriver: true,
     }).start();
-  };
+  }, [menuX]);
 
-  const closeMenu = () => {
+  const closeMenu = useCallback(() => {
     Animated.timing(menuX, {
       toValue: -320,
       duration: 250,
       useNativeDriver: true,
     }).start(() => setMenuOpen(false));
-  };
-
-  const goBack = () => {
-    if (deleteMode) {
-      setDeleteMode(false);
-      setSelectedItems([]);
-      return;
-    }
-
-    if (menuOpen) {
-      closeMenu();
-      return;
-    }
-
-    if (screen === "confirmation") {
-      setScreen("menu");
-      return;
-    }
-
-    if (screen === "menu") {
-      setScreen("table");
-      return;
-    }
-
-    onBack();
-  };
+  }, [menuX]);
 
   const toggleItemSelection = (id: string) => {
     setSelectedItems((current) =>
@@ -152,10 +50,10 @@ export function TableScreen({ table, onBack }: TableScreenProps) {
     );
   };
 
-  const deleteSelectedItems = () => {
+  const handleDeleteSelectedItems = () => {
     if (!selectedItems.length) return;
 
-    setItems((current) => current.filter((item) => !selectedItems.includes(item.id)));
+    deleteSelectedItems(selectedItems);
     setSelectedItems([]);
     setDeleteMode(false);
   };
@@ -167,35 +65,22 @@ export function TableScreen({ table, onBack }: TableScreenProps) {
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
-      goBack();
-      return true;
+      if (deleteMode) {
+        setDeleteMode(false);
+        setSelectedItems([]);
+        return true;
+      }
+
+      if (menuOpen) {
+        closeMenu();
+        return true;
+      }
+
+      return false;
     });
 
     return () => subscription.remove();
-  }, [screen, menuOpen, deleteMode, selectedItems]);
-
-  if (screen === "menu") {
-    return (
-      <TableMenuScreen
-        products={mockProducts}
-        cart={cart}
-        onBack={goBack}
-        onAdd={addToCart}
-        onContinue={goToConfirmation}
-      />
-    );
-  }
-
-  if (screen === "confirmation") {
-    return (
-      <OrderConfirmationScreen
-        table={table}
-        cart={cart}
-        onBack={goBack}
-        onConfirm={confirmOrder}
-      />
-    );
-  }
+  }, [deleteMode, menuOpen, closeMenu]);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -206,7 +91,7 @@ export function TableScreen({ table, onBack }: TableScreenProps) {
           </Button>
 
           <YStack flex={1}>
-            <Text fontSize="$7" fontWeight="800">Mesa {table.number}</Text>
+            <Text fontSize="$7" fontWeight="800">Mesa {number}</Text>
             <Text fontSize="$3" color="$color10">{items.length} itens</Text>
           </YStack>
 
@@ -269,7 +154,7 @@ export function TableScreen({ table, onBack }: TableScreenProps) {
                 backgroundColor="$red9"
                 color="white"
                 disabled={!selectedItems.length}
-                onPress={deleteSelectedItems}
+                onPress={handleDeleteSelectedItems}
               >
                 <Ionicons color="white" name="trash-outline" size={20} />
                 <Text color="white">Excluir selecionados</Text>

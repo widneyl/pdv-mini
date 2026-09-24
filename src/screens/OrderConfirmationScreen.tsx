@@ -1,20 +1,19 @@
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Button, Card, Separator, Text, XStack, YStack } from "tamagui";
-import type { RestaurantTable } from "@/types/types";
-import { CartItem } from "./TableSceen";
+import { Button, Card, Text, XStack, YStack } from "tamagui";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useTable } from "@/contexts/TableContext";
+import type { CartItem } from "@/model/tableTypes";
+import type { TableStackParamList } from "@/navigation/types";
 
-interface OrderConfirmationScreenProps {
-  table: RestaurantTable;
-  cart: CartItem[];
-  onBack: () => void;
-  onConfirm: () => void;
-}
+type Props = NativeStackScreenProps<TableStackParamList, "Confirmation">;
 
 const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace(".", ",")}`;
 
-export function OrderConfirmationScreen({ table, cart, onBack, onConfirm }: OrderConfirmationScreenProps) {
+export function OrderConfirmationScreen({ navigation, route }: Props) {
+  const { number } = route.params;
+  const { cart, confirmOrder } = useTable() as { cart: CartItem[]; confirmOrder: () => void };
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const quantity = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -22,12 +21,12 @@ export function OrderConfirmationScreen({ table, cart, onBack, onConfirm }: Orde
     <SafeAreaView style={{ flex: 1 }}>
       <YStack flex={1} backgroundColor="$background">
         <XStack padding="$3" alignItems="center" gap="$3">
-          <Button size="$3" circular chromeless onPress={onBack}>
+          <Button size="$3" circular chromeless onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={22} />
           </Button>
           <YStack flex={1}>
             <Text fontSize="$7" fontWeight="800">Confirmar pedido</Text>
-            <Text fontSize="$3" color="$color10">Mesa {table.number}</Text>
+            <Text fontSize="$3" color="$color10">Mesa {number}</Text>
           </YStack>
         </XStack>
 
@@ -52,7 +51,16 @@ export function OrderConfirmationScreen({ table, cart, onBack, onConfirm }: Orde
             <Text color="$color10">{quantity} itens</Text>
             <Text fontSize="$5" fontWeight="800">{formatCurrency(total)}</Text>
           </XStack>
-          <Button size="$5" borderRadius="$5" backgroundColor="$green10" color="white" onPress={onConfirm}>
+          <Button
+            size="$5"
+            borderRadius="$5"
+            backgroundColor="$green10"
+            color="white"
+            onPress={() => {
+              confirmOrder();
+              navigation.goBack();
+            }}
+          >
             Confirmar e lançar na mesa
           </Button>
         </YStack>

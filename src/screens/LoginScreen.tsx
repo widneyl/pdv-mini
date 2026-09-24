@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Input, Text, XStack, YStack } from "tamagui";
 import { signIn } from "@/services/auth";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "@/navigation/types";
 
-interface LoginScreenProps {
-  onLogin: () => void;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
-export function LoginScreen({ onLogin }: LoginScreenProps) {
+export function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -20,7 +20,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     setError(null);
     try {
       await signIn(email, password);
-      onLogin();
+      navigation.replace("WaiterSelect");
     } catch {
       setError("E-mail ou senha inválidos.");
     } finally {

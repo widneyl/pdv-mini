@@ -1,17 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Card, Text, XStack, YStack } from "tamagui";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { PosStackParamList } from "@/navigation/types";
 
-interface SettingsScreenProps {
-  onBack: () => void;
-  onTables: () => void;
-  onLogout: () => void;
-}
+type Props = NativeStackScreenProps<PosStackParamList, "Settings">;
 
-export function SettingsScreen({ onBack, onTables, onLogout }: SettingsScreenProps) {
+export function SettingsScreen({ navigation }: Props) {
   return (
     <YStack flex={1} backgroundColor="$background">
       <XStack alignItems="center" padding="$3" gap="$3">
-        <Button size="$3" circular chromeless onPress={onBack}>
+        <Button size="$3" circular chromeless onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} />
         </Button>
         <Text fontSize="$7" fontWeight="800">Configurações</Text>
@@ -24,7 +22,7 @@ export function SettingsScreen({ onBack, onTables, onLogout }: SettingsScreenPro
           backgroundColor="$gray1"
           borderWidth={1}
           borderColor="$borderColor"
-          onPress={onTables}
+          onPress={() => navigation.navigate("TablesSettings")}
         >
           <XStack alignItems="center" gap="$3">
             <Ionicons name="grid-outline" size={24} />
@@ -42,7 +40,7 @@ export function SettingsScreen({ onBack, onTables, onLogout }: SettingsScreenPro
           backgroundColor="$gray1"
           borderWidth={1}
           borderColor="$borderColor"
-          onPress={onLogout}
+          onPress={() => navigation.navigate("Login" as never)}
         >
           <XStack alignItems="center" gap="$3">
             <Ionicons name="log-out-outline" size={24} color="red" />
