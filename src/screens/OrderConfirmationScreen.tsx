@@ -4,18 +4,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { Button, Card, Text, XStack, YStack } from "tamagui";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useTable } from "@/contexts/TableContext";
-import type { CartItem } from "@/model/tableTypes";
 import type { TableStackParamList } from "@/navigation/types";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 type Props = NativeStackScreenProps<TableStackParamList, "Confirmation">;
 
-const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace(".", ",")}`;
-
 export function OrderConfirmationScreen({ navigation, route }: Props) {
   const { number } = route.params;
-  const { cart, confirmOrder } = useTable() as { cart: CartItem[]; confirmOrder: () => void };
+  const { cart, confirmOrder } = useTable();
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const quantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const handleConfirmOrder = () => {
+    const payload = confirmOrder();
+  }
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -36,7 +38,7 @@ export function OrderConfirmationScreen({ navigation, route }: Props) {
               <Card key={item.id} padding="$3" borderRadius="$5" backgroundColor="$gray1" borderWidth={1} borderColor="$borderColor">
                 <XStack alignItems="center">
                   <YStack flex={1} gap="$1">
-                    <Text fontSize="$4" fontWeight="800">{item.name}</Text>
+                    <Text fontSize="$4" fontWeight="800">{item.title}</Text>
                     <Text fontSize="$3" color="$color10">{item.quantity} × {formatCurrency(item.price)}</Text>
                   </YStack>
                   <Text fontSize="$4" fontWeight="800">{formatCurrency(item.price * item.quantity)}</Text>
@@ -56,10 +58,7 @@ export function OrderConfirmationScreen({ navigation, route }: Props) {
             borderRadius="$5"
             backgroundColor="$green10"
             color="white"
-            onPress={() => {
-              confirmOrder();
-              navigation.goBack();
-            }}
+            onPress={handleConfirmOrder}
           >
             Confirmar e lançar na mesa
           </Button>

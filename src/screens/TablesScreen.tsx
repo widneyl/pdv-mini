@@ -3,7 +3,7 @@ import { ScrollView, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Card, Spinner, Text, XStack, YStack } from "tamagui";
 import { useTables } from "@/contexts/TablesContext";
-import type { RestaurantTable } from "@/model/restaurantTable";
+import type { RestaurantTableResponse } from "@/model/restaurantTable";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { PosStackParamList } from "@/navigation/types";
 import { WaiterHeader } from "@/components/WaiterHeader/WaiterHeader";
@@ -21,13 +21,12 @@ export function TablesScreen({ navigation }: Props) {
   const columns = Math.max(1, Math.floor((width - padding * 2 + gap) / (minCardWidth + gap)));
   const cardWidth = (width - padding * 2 - gap * (columns - 1)) / columns;
 
-  const getTableColor = (table: RestaurantTable) => {
-    if (table.status === "OCCUPIED") return "$green9";
-    if (table.status === "CLOSED") return "$red9";
+  const getTableColor = (table: RestaurantTableResponse) => {
+    if (table.order) return "$green9";
     return "$gray1";
   };
 
-  const isTableFree = (table: RestaurantTable) => table.status === "FREE" || table.status == null;
+  const isTableFree = (table: RestaurantTableResponse) => table.order == null;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

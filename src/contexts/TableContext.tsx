@@ -1,58 +1,69 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { mockItems } from "@/data/mockData";
-import type { CartItem, MenuProduct, TableItem } from "@/model/tableTypes";
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import type { MenuItem } from "@/model/menuItem";
+import { OrderStatus, type CreateOrderDto, type OrderItemSnapshot } from "@/model/order";
 
 interface TableContextValue {
-  items: TableItem[];
-  cart: CartItem[];
-  tableTotal: number;
-  addToCart: (product: MenuProduct) => void;
-  confirmOrder: () => void;
-  deleteSelectedItems: (ids: string[]) => void;
+  cart: OrderItemSnapshot[];
+  addToCart: (product: MenuItem) => void;
+  decrementFromCart: (title: string) => void;
+  clearCart: () => void;
+  confirmOrder: () => CreateOrderDto;
 }
 
 const TableContext = createContext<TableContextValue | null>(null);
 
-export function TableProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<TableItem[]>(mockItems);
-  const [cart, setCart] = useState<CartItem[]>([]);
+const generateId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
 
-  const tableTotal = useMemo(
-    () =>
-      items.reduce((total, item) => {
-        const additionalsTotal = item.additionals?.reduce((sum, additional) => sum + additional.price, 0) ?? 0;
-        return total + (item.price + additionalsTotal) * item.quantity;
-      }, 0),
-    [items]
-  );
+export function TableProvider({ tableId, children }: { tableId: string; children: ReactNode }) {
+  const [cart, setCart] = useState<OrderItemSnapshot[]>([]);
 
-  const addToCart = (product: MenuProduct) => {
+  const addToCart = (product: MenuItem) => {
     setCart((current) => {
-      const existing = current.find((item) => item.id === product.id);
+      const existing = current.find((item) => item.title === product.title);
       if (existing) {
-        return current.map((item) => (item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item));
+        return current.map((item) => (item.title === product.title ? { ...item, quantity: item.quantity + 1 } : item));
       }
-      return [...current, { ...product, quantity: 1 }];
+      return [
+        ...current,
+        {
+          id: generateId(),
+          title: product.title,
+          price: product.price,
+          quantity: 1,
+          createdAt: new Date(),
+        },
+      ];
     });
   };
 
-  const confirmOrder = () => {
-    const newItems: TableItem[] = cart.map((item) => ({
-      id: `${item.id}-${Date.now()}`,
-      name: item.name,
-      quantity: item.quantity,
-      price: item.price,
-    }));
-    setItems((current) => [...current, ...newItems]);
-    setCart([]);
+  const decrementFromCart = (title: string) => {
+    setCart((current) => {
+      const existing = current.find((item) => item.title === title);
+      if (!existing) return current;
+      if (existing.quantity <= 1) {
+        return current.filter((item) => item.title !== title);
+      }
+      return current.map((item) =>
+        item.title === title ? { ...item, quantity: item.quantity - 1 } : item
+      );
+    });
   };
 
-  const deleteSelectedItems = (ids: string[]) => {
-    setItems((current) => current.filter((item) => !ids.includes(item.id)));
+  const clearCart = useCallback(() => setCart([]), []);
+
+  const confirmOrder = (): CreateOrderDto => {
+    const dto: CreateOrderDto = {
+      orderItemSnapshot: cart,
+      status: OrderStatus.OCCUPIED,
+      isPaid: false,
+      restaurantTableRef: tableId,
+    };
+    setCart([]);
+    return dto;
   };
 
   return (
-    <TableContext.Provider value={{ items, cart, tableTotal, addToCart, confirmOrder, deleteSelectedItems }}>
+    <TableContext.Provider value={{ cart, addToCart, decrementFromCart, clearCart, confirmOrder }}>
       {children}
     </TableContext.Provider>
   );

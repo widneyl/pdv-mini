@@ -1,19 +1,19 @@
-import { RestaurantTable } from "@/model/restaurantTable";
+import { RestaurantTableResponse } from "@/model/restaurantTable";
 import { api } from "@/services/api";
 
 export class RestaurantTableService {
-  async list(): Promise<RestaurantTable[]> {
-    const { data } = await api.get<RestaurantTable[]>("/restaurant-tables");
+  async list(): Promise<RestaurantTableResponse[]> {
+    const { data } = await api.get<RestaurantTableResponse[]>("/restaurant-tables");
     return data;
   }
 
-  async getById(id: string): Promise<RestaurantTable> {
-    const { data } = await api.get<RestaurantTable>(`/restaurant-tables/${id}`);
+  async getById(id: string): Promise<RestaurantTableResponse> {
+    const { data } = await api.get<RestaurantTableResponse>(`/restaurant-tables/${id}`);
     return data;
   }
 
   async createMany(quantity: number){
-    await api.post<RestaurantTable>(
+    await api.post<RestaurantTableResponse>(
       "/restaurant-tables/bulk",
       {
         quantity,

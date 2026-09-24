@@ -13,6 +13,13 @@ export interface OrderItemSnapshot extends Pick<MenuItem, "price" | "title"> {
   createdAt: Date;
 }
 
+export interface CreateOrderDto {
+  orderItemSnapshot: OrderItemSnapshot[];
+  status: OrderStatus;
+  isPaid: boolean;
+  restaurantTableRef: string;
+}
+
 export interface Order extends BaseEntity {
   orderItemSnapshot: OrderItemSnapshot[];
   status: OrderStatus;

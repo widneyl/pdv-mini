@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import type { RestaurantTable } from "@/model/restaurantTable";
+import type { RestaurantTableResponse } from "@/model/restaurantTable";
 import { restaurantTableService } from "@/services/restaurantTableService";
 
 interface TablesContextValue {
-  tables: RestaurantTable[];
+  tables: RestaurantTableResponse[];
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
@@ -12,7 +12,7 @@ interface TablesContextValue {
 const TablesContext = createContext<TablesContextValue | null>(null);
 
 export function TablesProvider({ children }: { children: ReactNode }) {
-  const [tables, setTables] = useState<RestaurantTable[]>([]);
+  const [tables, setTables] = useState<RestaurantTableResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

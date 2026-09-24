@@ -13,7 +13,7 @@ export function TableNavigator({ route }: Props) {
   const { id, number } = route.params;
 
   return (
-    <TableProvider>
+    <TableProvider tableId={id}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="TableDetail" component={TableScreen} initialParams={{ id, number }} />
         <Stack.Screen name="Menu" component={TableMenuScreen} initialParams={{ id, number }} />

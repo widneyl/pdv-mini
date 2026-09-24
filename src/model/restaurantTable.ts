@@ -1,7 +1,8 @@
 import { BaseEntity } from "@/model/baseEntity";
+import { Order } from "./order";
 
-export interface RestaurantTable extends BaseEntity {
+export interface RestaurantTableResponse extends BaseEntity {
   restaurantRef: string;
   number: number;
-  status?: "FREE" | "OCCUPIED" | "CLOSED";
+  order: Order | undefined;
 }
