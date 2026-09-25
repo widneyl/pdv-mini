@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Input, Spinner, Text, XStack, YStack } from "tamagui";
-import { UserRole } from "@/model/user";
 import { SafeUser, userService } from "@/services/userService";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "@/navigation/types";
 
-interface WaiterSelectScreenProps {
-  onConfirm: (waiter: SafeUser) => void;
-  onBack: () => void;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "WaiterSelect">;
 
-export function WaiterSelectScreen({ onConfirm, onBack }: WaiterSelectScreenProps) {
+export function WaiterSelectScreen({ navigation }: Props) {
   const [waiters, setWaiters] = useState<SafeUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -46,9 +44,9 @@ export function WaiterSelectScreen({ onConfirm, onBack }: WaiterSelectScreenProp
     setAuthenticating(true);
     setAuthError(null);
     try {
-      const user = await userService.authenticate(selectedWaiter.name, password);
-      onConfirm(user);
-    } catch (error: any) {
+      await userService.authenticate(selectedWaiter.name, password);
+      navigation.replace("Pos");
+    } catch {
       setAuthError("Senha inválida.");
     } finally {
       setAuthenticating(false);
@@ -158,7 +156,7 @@ export function WaiterSelectScreen({ onConfirm, onBack }: WaiterSelectScreenProp
           </Text>
         </Button>
 
-        <Button chromeless onPress={onBack}>
+        <Button chromeless onPress={() => navigation.goBack()}>
           <Text color="$color10">Voltar</Text>
         </Button>
       </YStack>
