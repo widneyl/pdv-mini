@@ -1,19 +1,31 @@
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Input, Text, XStack, YStack } from "tamagui";
+import { signIn } from "@/services/auth";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "@/navigation/types";
 
-interface LoginScreenProps {
-  onLogin: () => void;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
-export function LoginScreen({ onLogin }: LoginScreenProps) {
+export function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = () => {
-    if (!email || !password) return;
-    onLogin();
+  const handleLogin = async () => {
+    if (!email || !password || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await signIn(email, password);
+      navigation.replace("WaiterSelect");
+    } catch {
+      setError("E-mail ou senha inválidos.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -63,7 +75,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           </YStack>
         </YStack>
 
-        <Button size="$4" height={52} backgroundColor="$blue10" color="white" borderRadius="$4" onPress={handleLogin}>
+        {error ? <Text color="$red10" fontSize="$3">{error}</Text> : null}
+
+        <Button size="$4" height={52} backgroundColor="$blue10" color="white" borderRadius="$4" onPress={handleLogin} disabled={loading} opacity={loading ? 0.6 : 1}>
           <Text color="white" fontSize="$4" fontWeight="700">Entrar</Text>
         </Button>
       </YStack>
