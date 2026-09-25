@@ -9,18 +9,21 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useMemo, useState } from "react";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button, Card, Input, Text, XStack, YStack } from "tamagui";
+import { Button, Card, Input, Spinner, Text, XStack, YStack } from "tamagui";
 
 type Props = NativeStackScreenProps<TableStackParamList, "Menu">;
 
 export function TableMenuScreen({ navigation, route }: Props) {
-  const { id, number } = route.params;
+  const { id, number, orderId } = route.params;
 
   const [products, setProducts] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const getMenuItems = async () => {
+    setLoading(true);
     const result = await menuItemService.list();
     setProducts(result);
+    setLoading(false);
   };
 
   useFocusEffect(
@@ -41,6 +44,8 @@ export function TableMenuScreen({ navigation, route }: Props) {
   }, [products, search]);
 
   const cartQuantity = cart.reduce((total, item) => total + item.quantity, 0);
+
+  if (loading) return <Spinner />;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -148,7 +153,7 @@ export function TableMenuScreen({ navigation, route }: Props) {
               backgroundColor="$blue10"
               color="white"
               onPress={() =>
-                navigation.navigate("Confirmation", { id, number })
+                navigation.navigate("Confirmation", { id, number, orderId })
               }
             >
               <XStack

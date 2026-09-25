@@ -13,6 +13,6 @@ export type PosStackParamList = {
 
 export type TableStackParamList = {
   TableDetail: { id: string; number: number };
-  Menu: { id: string; number: number };
-  Confirmation: { id: string; number: number };
+  Menu: { id: string; number: number; orderId?: string };
+  Confirmation: { id: string; number: number; orderId?: string };
 };

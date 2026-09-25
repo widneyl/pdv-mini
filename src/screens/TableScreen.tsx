@@ -1,6 +1,7 @@
 import { RestaurantTableResponse } from "@/model/restaurantTable";
 import type { TableStackParamList } from "@/navigation/types";
 import { restaurantTableService } from "@/services/restaurantTableService";
+import { orderService } from "@/services/orderService";
 import { useTable } from "@/contexts/TableContext";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,10 +21,15 @@ export function TableScreen({ navigation, route }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
   const menuX = useMemo(() => new Animated.Value(-320), []);
 
   const goToMenu = () => {
-    navigation.navigate("Menu", { id, number });
+    navigation.navigate("Menu", {
+      id,
+      number,
+      orderId: tableData?.order?.id,
+    });
   };
 
   const openMenu = useCallback(() => {
@@ -49,13 +55,6 @@ export function TableScreen({ navigation, route }: Props) {
         ? current.filter((itemId) => itemId !== id)
         : [...current, id],
     );
-  };
-
-  const handleDeleteSelectedItems = () => {
-    if (!selectedItems.length) return;
-
-    setSelectedItems([]);
-    setDeleteMode(false);
   };
 
   const openDeleteMode = () => {
@@ -99,6 +98,43 @@ export function TableScreen({ navigation, route }: Props) {
   const tableTotal = items.reduce((total, value) => {
     return total + value.price * value.quantity;
   }, 0)
+
+  const handleDeleteSelectedItems = async () => {
+    if (!selectedItems.length || isDeleting) return;
+    const orderId = tableData?.order?.id;
+    if (!orderId) return;
+
+    try {
+      setIsDeleting(true);
+      const selected = items.filter((item) => selectedItems.includes(item.id));
+      await orderService.removeOrderItem(orderId, {
+        orderItemSnapshot: selected,
+      });
+      setSelectedItems([]);
+      setDeleteMode(false);
+      await getTableData();
+    } catch (error: any) {
+      console.error(error.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const [closeLoading, setCloseLoading] = useState(false);
+  const handleCloseOrder = async () => {
+    try {
+      setCloseLoading(true);
+      if (tableData?.order) {
+        console.info(tableData?.order);
+        await orderService.close(tableData?.order?.id);
+        navigation.goBack();
+      }
+    } catch (error: any) {
+      console.error(error.message)
+    } finally {
+      setCloseLoading(false);
+    }
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -200,11 +236,13 @@ export function TableScreen({ navigation, route }: Props) {
                 borderRadius="$4"
                 backgroundColor="$red9"
                 color="white"
-                disabled={!selectedItems.length}
+                disabled={!selectedItems.length || isDeleting}
                 onPress={handleDeleteSelectedItems}
               >
                 <Ionicons color="white" name="trash-outline" size={20} />
-                <Text color="white">Excluir selecionados</Text>
+                <Text color="white">
+                  {isDeleting ? "Excluindo..." : "Excluir selecionados"}
+                </Text>
               </Button>
             </YStack>
           </YStack>
@@ -270,7 +308,7 @@ export function TableScreen({ navigation, route }: Props) {
                             Total
                           </Text>
                           <Text fontSize="$5" fontWeight="800">
-                            {formatCurrency(tableTotal * 1.1)}
+                            {formatCurrency(tableTotal)}
                           </Text>
                         </XStack>
                       </YStack>
@@ -299,7 +337,8 @@ export function TableScreen({ navigation, route }: Props) {
                   borderRadius="$4"
                   backgroundColor="$red9"
                   color="white"
-                  onPress={() => {}}
+                  disabled={closeLoading}
+                  onPress={handleCloseOrder}
                 >
                   <Text color="white">Fechar conta</Text>
                 </Button>
